@@ -7,6 +7,14 @@ const fileupload = require('express-fileupload');
 const cookieParser = require('cookie-parser');
 const path = require('path');
 
+// Security
+const mongoSanitize = require('express-mongo-sanitize'); // Protect Database from noSQL injections
+const helmet = require('helmet'); // Security headers
+const xss = require('xss-clean'); // Prevent XSS attacks
+const hpp = require('hpp'); // Prevent Http request paramaters pollution
+const rateLimit = require('express-rate-limit'); // Limit number of requests
+const cors = require('cors'); // Cross origin site
+
 //LOAD ENV VARS
 dotenv.config({ path: './config/config.env' });
 
@@ -36,6 +44,30 @@ if (process.env.NODE_ENV === 'development') {
 
 // File uploading
 app.use(fileupload());
+
+// Sanitize database
+app.use(mongoSanitize());
+
+// Set security headers
+app.use(helmet());
+
+// Prevent XSS attacks
+app.use(xss());
+
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: 10 * 60 * 1000, // 10 mins
+  max: 100,
+});
+
+app.use(limiter);
+
+// Prevent http param pollution
+
+app.use(hpp());
+
+// Enable CORS
+app.use(cors()); // For example if we upload the backend to one domain and the frontend to different domain we will still be able to use our api
 
 // Set static folder
 app.use(express.static(path.join(__dirname, 'public'))); //Setting public as a static folder
